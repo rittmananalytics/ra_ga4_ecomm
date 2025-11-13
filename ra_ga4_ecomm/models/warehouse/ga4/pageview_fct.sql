@@ -13,117 +13,69 @@
 
 with
 
-s_events as (
+s_pageviews as (
 
-    select * from {{ ref('stg_ga4__event') }}
-    where event_name = 'page_view'
+    select * from {{ ref('int__pageview') }}
     {% if is_incremental() %}
-        and event_date > (
+        where event_date > (
             select max(event_date) from {{ this }}
         )
     {% endif %}
 
 ),
 
-page_events_with_params as (
-
-    select
-        -- primary key fields
-        event_pk,
-        event_date,
-        event_ts,
-
-        -- foreign keys
-        user_pseudo_id as user_fk,
-        ga_session_id,
-
-        -- page parameters from event_params
-        (
-            select value.string_value
-            from unnest(event_params)
-            where key = 'page_location'
-        ) as page_location,
-        (
-            select value.string_value
-            from unnest(event_params)
-            where key = 'page_title'
-        ) as page_title,
-        (
-            select value.string_value
-            from unnest(event_params)
-            where key = 'page_referrer'
-        ) as page_referrer,
-        (
-            select value.int_value
-            from unnest(event_params)
-            where key = 'entrances'
-        ) as entrances,
-        (
-            select value.string_value
-            from unnest(event_params)
-            where key = 'engagement_time_msec'
-        ) as engagement_time_msec,
-        (
-            select value.string_value
-            from unnest(event_params)
-            where key = 'session_engaged'
-        ) as session_engaged,
-
-        -- traffic source
-        traffic_source_name,
-        traffic_source_medium,
-        traffic_source_source,
-
-        -- device
-        device_category,
-        device_operating_system,
-        device_browser,
-        device_language,
-
-        -- geography
-        geo_continent,
-        geo_sub_continent,
-        geo_country,
-        geo_region,
-        geo_city
-
-    from s_events
-
-),
-
-page_events_with_timing as (
+pageviews_with_timing as (
 
     select
         *,
 
         -- Navigation timing
-        lead(event_ts) over (
-            partition by user_fk, ga_session_id
-            order by event_ts
+        lead(pageview_ts) over (
+            partition by source, user_fk, ga_session_id
+            order by pageview_ts
         ) as next_page_ts,
         lag(page_location) over (
-            partition by user_fk, ga_session_id
-            order by event_ts
+            partition by source, user_fk, ga_session_id
+            order by pageview_ts
         ) as previous_page_location,
 
         -- Page sequencing
         row_number() over (
-            partition by user_fk, ga_session_id
-            order by event_ts
+            partition by source, user_fk, ga_session_id
+            order by pageview_ts
         ) as page_number_in_session,
         count(*) over (
-            partition by user_fk, ga_session_id
+            partition by source, user_fk, ga_session_id
         ) as total_pages_in_session
 
-    from page_events_with_params
+    from s_pageviews
+
+),
+
+pageviews_with_keys as (
+
+    select
+        -- primary key
+        {{ dbt_utils.generate_surrogate_key([
+            'source',
+            'event_pk'
+        ]) }} as pageview_pk,
+
+        -- all fields from integration
+        *
+
+    from pageviews_with_timing
 
 ),
 
 final as (
 
     select
-        -- primary key (use event_pk as pageview_pk)
-        event_pk as pageview_pk,
+        -- primary key
+        pageview_pk,
+
+        -- source identifier
+        source,
 
         -- foreign keys
         user_fk,
@@ -135,7 +87,7 @@ final as (
         ga_session_id,
 
         -- timestamps
-        event_ts as pageview_ts,
+        pageview_ts,
 
         -- page details
         page_location,
@@ -143,17 +95,24 @@ final as (
         page_referrer,
         previous_page_location,
 
+        -- Snowplow-specific page details
+        page_url,
+        page_urlhost,
+        page_urlpath,
+        page_urlquery,
+        page_urlfragment,
+
         -- page path analysis
         regexp_extract(
-            page_location,
+            coalesce(page_location, page_url),
             r'https?://[^/]+(/[^?#]*)'
         ) as page_path,
         regexp_extract(
-            page_location,
+            coalesce(page_location, page_url),
             r'https?://([^/]+)'
         ) as page_hostname,
         regexp_extract(
-            page_location,
+            coalesce(page_location, page_url),
             r'\?(.*)'
         ) as query_string,
 
@@ -170,7 +129,7 @@ final as (
         -- time on page calculation
         case
             when next_page_ts is not null
-            then timestamp_diff(next_page_ts, event_ts, second)
+            then timestamp_diff(next_page_ts, pageview_ts, second)
             else null
         end as time_on_page_seconds,
 
@@ -198,6 +157,8 @@ final as (
         traffic_source_name,
         traffic_source_medium,
         traffic_source_source,
+        traffic_source_content,
+        traffic_source_term,
         concat(
             coalesce(traffic_source_source, '(direct)'),
             ' / ',
@@ -210,14 +171,26 @@ final as (
         device_browser,
         device_language,
 
+        -- device details (Snowplow-specific)
+        browser_family,
+        browser_name,
+        browser_version,
+        browser_viewheight,
+        browser_viewwidth,
+
         -- geographic info
         geo_continent,
         geo_sub_continent,
         geo_country,
         geo_region,
-        geo_city
+        geo_region_name,
+        geo_city,
+        geo_zipcode,
+        geo_latitude,
+        geo_longitude,
+        geo_timezone
 
-    from page_events_with_timing
+    from pageviews_with_keys
 
 )
 

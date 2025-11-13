@@ -15,10 +15,9 @@ with
 
 s_events as (
 
-    select * from {{ ref('stg_ga4__event') }}
-    where event_name = 'purchase'
+    select * from {{ ref('int__purchase') }}
     {% if is_incremental() %}
-        and event_date > (
+        where event_date > (
             select max(event_date) from {{ this }}
         )
     {% endif %}
@@ -40,13 +39,17 @@ purchase_events_with_items as (
     select
         -- generate unique key for each item in purchase
         {{ dbt_utils.generate_surrogate_key([
+            'source',
             'event_pk',
             'item.item_id',
             'item_offset'
         ]) }} as purchase_pk,
 
+        -- source identifier
+        source,
+
         -- foreign keys
-        user_pseudo_id as user_fk,
+        user_fk,
 
         -- dates
         event_date,
@@ -58,13 +61,17 @@ purchase_events_with_items as (
         event_ts as purchase_ts,
 
         -- transaction details
-        ecommerce.transaction_id,
-        ecommerce.purchase_revenue_in_usd,
-        ecommerce.purchase_revenue,
-        ecommerce.tax_value_in_usd,
-        ecommerce.shipping_value_in_usd,
-        ecommerce.total_item_quantity,
-        ecommerce.unique_items,
+        transaction_id,
+        purchase_revenue_in_usd,
+        purchase_revenue,
+        tax_value_in_usd,
+        shipping_value_in_usd,
+        total_item_quantity,
+        unique_items,
+
+        -- Snowplow-specific ecommerce
+        ecommerce_value,
+        ecommerce_currency,
 
         -- item details
         item.item_id,
@@ -96,17 +103,40 @@ purchase_events_with_items as (
         traffic_source_name,
         traffic_source_medium,
         traffic_source_source,
+        traffic_source_content,
+        traffic_source_term,
 
         -- device info
         device_category,
         device_operating_system,
         device_browser,
+        device_language,
+
+        -- device details (Snowplow-specific)
+        browser_family,
+        browser_name,
+        browser_version,
+        device_type,
+        device_is_mobile,
+        device_screen_height,
+        device_screen_width,
 
         -- geographic info
         geo_continent,
+        geo_sub_continent,
         geo_country,
         geo_region,
-        geo_city
+        geo_region_name,
+        geo_city,
+        geo_zipcode,
+        geo_latitude,
+        geo_longitude,
+        geo_timezone,
+
+        -- user properties (Snowplow-specific)
+        user_customer_segment,
+        user_loyalty_tier,
+        user_subscription_status
 
     from s_events,
     unnest(items) as item with offset as item_offset
@@ -118,6 +148,9 @@ final as (
     select
         -- primary key
         purchase_events_with_items.purchase_pk,
+
+        -- source identifier
+        purchase_events_with_items.source,
 
         -- foreign keys
         purchase_events_with_items.user_fk,
@@ -159,6 +192,10 @@ final as (
         purchase_events_with_items.shipping_value_in_usd,
         purchase_events_with_items.total_item_quantity,
         purchase_events_with_items.unique_items,
+
+        -- Snowplow-specific ecommerce
+        purchase_events_with_items.ecommerce_value,
+        purchase_events_with_items.ecommerce_currency,
 
         -- item details
         purchase_events_with_items.item_id,
@@ -217,6 +254,8 @@ final as (
         purchase_events_with_items.traffic_source_name,
         purchase_events_with_items.traffic_source_medium,
         purchase_events_with_items.traffic_source_source,
+        purchase_events_with_items.traffic_source_content,
+        purchase_events_with_items.traffic_source_term,
         concat(
             coalesce(
                 purchase_events_with_items.traffic_source_source,
@@ -233,12 +272,33 @@ final as (
         purchase_events_with_items.device_category,
         purchase_events_with_items.device_operating_system,
         purchase_events_with_items.device_browser,
+        purchase_events_with_items.device_language,
+
+        -- device details (Snowplow-specific)
+        purchase_events_with_items.browser_family,
+        purchase_events_with_items.browser_name,
+        purchase_events_with_items.browser_version,
+        purchase_events_with_items.device_type,
+        purchase_events_with_items.device_is_mobile,
+        purchase_events_with_items.device_screen_height,
+        purchase_events_with_items.device_screen_width,
 
         -- geographic info
         purchase_events_with_items.geo_continent,
+        purchase_events_with_items.geo_sub_continent,
         purchase_events_with_items.geo_country,
         purchase_events_with_items.geo_region,
-        purchase_events_with_items.geo_city
+        purchase_events_with_items.geo_region_name,
+        purchase_events_with_items.geo_city,
+        purchase_events_with_items.geo_zipcode,
+        purchase_events_with_items.geo_latitude,
+        purchase_events_with_items.geo_longitude,
+        purchase_events_with_items.geo_timezone,
+
+        -- user properties (Snowplow-specific)
+        purchase_events_with_items.user_customer_segment,
+        purchase_events_with_items.user_loyalty_tier,
+        purchase_events_with_items.user_subscription_status
 
     from purchase_events_with_items
     left join s_sessions

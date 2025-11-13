@@ -39,6 +39,7 @@ renamed as (
 
         -- ecommerce
         ecommerce,
+        ecommerce.items,
 
         -- traffic source
         traffic_source.source as traffic_source_source,

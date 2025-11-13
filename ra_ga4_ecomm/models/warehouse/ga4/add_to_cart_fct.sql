@@ -15,10 +15,9 @@ with
 
 s_events as (
 
-    select * from {{ ref('stg_ga4__event') }}
-    where event_name = 'add_to_cart'
+    select * from {{ ref('int__add_to_cart') }}
     {% if is_incremental() %}
-        and event_date > (
+        where event_date > (
             select max(event_date) from {{ this }}
         )
     {% endif %}
@@ -30,13 +29,17 @@ cart_events_with_items as (
     select
         -- generate unique key for each item in cart event
         {{ dbt_utils.generate_surrogate_key([
+            'source',
             'event_pk',
             'item.item_id',
             'item_offset'
         ]) }} as add_to_cart_pk,
 
+        -- source identifier
+        source,
+
         -- foreign keys
-        user_pseudo_id as user_fk,
+        user_fk,
 
         -- dates
         event_date,
@@ -48,9 +51,9 @@ cart_events_with_items as (
         event_ts as add_to_cart_ts,
 
         -- ecommerce metrics
-        ecommerce.transaction_id,
-        ecommerce.total_item_quantity,
-        ecommerce.unique_items,
+        transaction_id,
+        total_item_quantity,
+        unique_items,
 
         -- item details
         item.item_id,
@@ -83,6 +86,8 @@ cart_events_with_items as (
         traffic_source_name,
         traffic_source_medium,
         traffic_source_source,
+        traffic_source_content,
+        traffic_source_term,
         concat(
             coalesce(traffic_source_source, '(direct)'),
             ' / ',
@@ -93,12 +98,33 @@ cart_events_with_items as (
         device_category,
         device_operating_system,
         device_browser,
+        device_language,
+
+        -- device details (Snowplow-specific)
+        browser_family,
+        browser_name,
+        browser_version,
+        device_type,
+        device_is_mobile,
+        device_screen_height,
+        device_screen_width,
 
         -- geographic info
         geo_continent,
+        geo_sub_continent,
         geo_country,
         geo_region,
-        geo_city
+        geo_region_name,
+        geo_city,
+        geo_zipcode,
+        geo_latitude,
+        geo_longitude,
+        geo_timezone,
+
+        -- user properties (Snowplow-specific)
+        user_customer_segment,
+        user_loyalty_tier,
+        user_subscription_status
 
     from s_events,
     unnest(items) as item with offset as item_offset
@@ -110,6 +136,9 @@ final as (
     select
         -- primary key
         add_to_cart_pk,
+
+        -- source identifier
+        source,
 
         -- foreign keys
         user_fk,
@@ -158,18 +187,41 @@ final as (
         traffic_source_name,
         traffic_source_medium,
         traffic_source_source,
+        traffic_source_content,
+        traffic_source_term,
         traffic_source_full,
 
         -- device info
         device_category,
         device_operating_system,
         device_browser,
+        device_language,
+
+        -- device details (Snowplow-specific)
+        browser_family,
+        browser_name,
+        browser_version,
+        device_type,
+        device_is_mobile,
+        device_screen_height,
+        device_screen_width,
 
         -- geographic info
         geo_continent,
+        geo_sub_continent,
         geo_country,
         geo_region,
-        geo_city
+        geo_region_name,
+        geo_city,
+        geo_zipcode,
+        geo_latitude,
+        geo_longitude,
+        geo_timezone,
+
+        -- user properties (Snowplow-specific)
+        user_customer_segment,
+        user_loyalty_tier,
+        user_subscription_status
 
     from cart_events_with_items
 
