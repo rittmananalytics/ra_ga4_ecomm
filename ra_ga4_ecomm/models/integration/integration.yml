@@ -1,0 +1,182 @@
+version: 2
+
+models:
+  - name: int__session
+    description: >
+      Integration model combining session data from GA4 and Snowplow sources.
+      Unions sessions from both tracking systems with a common schema and source identifier.
+    columns:
+      - name: source
+        description: Data source identifier (ga4 or snowplow)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ga4', 'snowplow']
+
+      - name: event_date
+        description: The date when the session occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension (user_pseudo_id)
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: session_start_ts
+        description: Timestamp when the session started
+        tests:
+          - not_null
+
+  - name: int__pageview
+    description: >
+      Integration model combining pageview data from GA4 and Snowplow sources.
+      Each row represents a page view event with engagement metrics.
+    columns:
+      - name: source
+        description: Data source identifier (ga4 or snowplow)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ga4', 'snowplow']
+
+      - name: event_pk
+        description: Primary key for the event from staging layer
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the page view occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: pageview_ts
+        description: Timestamp when the page view occurred
+        tests:
+          - not_null
+
+  - name: int__add_to_cart
+    description: >
+      Integration model combining add to cart events from GA4 and Snowplow sources.
+      Contains ecommerce data with items arrays normalized to common schema.
+    columns:
+      - name: source
+        description: Data source identifier (ga4 or snowplow)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ga4', 'snowplow']
+
+      - name: event_pk
+        description: Primary key for the event from staging layer
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the add to cart event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: items
+        description: Array of items added to cart with normalized schema
+        tests:
+          - not_null
+
+  - name: int__purchase
+    description: >
+      Integration model combining purchase events from GA4 and Snowplow sources.
+      Contains transaction data with items arrays normalized to common schema.
+    columns:
+      - name: source
+        description: Data source identifier (ga4 or snowplow)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ga4', 'snowplow']
+
+      - name: event_pk
+        description: Primary key for the event from staging layer
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the purchase occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: items
+        description: Array of purchased items with normalized schema
+        tests:
+          - not_null
+
+  - name: int__product_view
+    description: >
+      Integration model combining product view events from GA4 and Snowplow sources.
+      Contains product browsing data with items arrays normalized to common schema.
+    columns:
+      - name: source
+        description: Data source identifier (ga4 or snowplow)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ga4', 'snowplow']
+
+      - name: event_pk
+        description: Primary key for the event from staging layer
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the product view occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: items
+        description: Array of viewed items with normalized schema
+        tests:
+          - not_null

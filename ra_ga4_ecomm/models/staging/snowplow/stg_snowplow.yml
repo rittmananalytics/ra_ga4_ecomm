@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_snowplow__event
+    description: >
+      Staging model for Snowplow events with GA4 ecommerce adapter.
+      Maps Snowplow event schema to GA4-compatible field names and structure.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from Snowplow
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier (cast from Snowplow session_id)
+        tests:
+          - not_null
+
+      - name: event_name
+        description: Name of the event (e.g., page_view, add_to_cart, purchase)
+        tests:
+          - not_null
+
+      - name: ecommerce
+        description: Ecommerce data struct containing transaction and item details
+
+      - name: items
+        description: Array of items from ecommerce events
