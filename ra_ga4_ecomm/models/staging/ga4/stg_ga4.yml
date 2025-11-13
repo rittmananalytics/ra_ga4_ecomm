@@ -1,0 +1,127 @@
+version: 2
+
+models:
+  - name: stg_ga4__event
+    description: >
+      Staging model for GA4 events. This is the base layer that reads directly
+      from the GA4 source and performs basic transformations like renaming,
+      type casting, and unnesting common event parameters.
+    columns:
+      - name: event_pk
+        description: >
+          Primary key for event records. Generated using surrogate_key from
+          event_timestamp and user_pseudo_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: >
+          The date when the event was logged (UTC). Parsed from YYYYMMDD
+          format to DATE type.
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: >
+          The timestamp when the event was logged (UTC). Converted from
+          microseconds since epoch to TIMESTAMP type.
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: >
+          The pseudonymous identifier for the user. This is a GA4-generated
+          identifier that persists across sessions for the same user.
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: >
+          The GA4 session identifier. Extracted from event_params array.
+          May be null for some events.
+
+      - name: event_name
+        description: >
+          The name of the event (e.g., page_view, purchase, add_to_cart).
+        tests:
+          - not_null
+
+      - name: event_bundle_sequence_id
+        description: >
+          The sequential ID of the bundle in which the event was uploaded.
+          Used as part of the primary key to ensure uniqueness.
+        tests:
+          - not_null
+
+      - name: event_params
+        description: >
+          Array of event parameters containing additional event-specific data
+          as key-value pairs.
+
+      - name: ecommerce
+        description: >
+          Ecommerce-related parameters for transaction and product events.
+          Contains revenue, tax, shipping, and item quantity information.
+
+      - name: items
+        description: >
+          Array of product items associated with the event. Present for
+          ecommerce events like view_item, add_to_cart, and purchase.
+
+      - name: traffic_source_name
+        description: >
+          The name of the traffic source campaign. May be null for direct
+          traffic.
+
+      - name: traffic_source_medium
+        description: >
+          The medium of the traffic source (e.g., organic, cpc, referral,
+          email). May be null for direct traffic.
+
+      - name: traffic_source_source
+        description: >
+          The source of the traffic (e.g., google, facebook, newsletter).
+          May be null for direct traffic.
+
+      - name: device_category
+        description: >
+          The category of the device used (mobile, desktop, or tablet).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['mobile', 'desktop', 'tablet']
+
+      - name: device_operating_system
+        description: >
+          The operating system of the device (e.g., iOS, Android, Windows,
+          macOS).
+
+      - name: device_browser
+        description: >
+          The browser used for web events. Extracted from device.web_info.
+
+      - name: device_language
+        description: >
+          The language setting of the device or browser.
+
+      - name: geo_continent
+        description: >
+          The continent where the user is located based on IP address.
+
+      - name: geo_sub_continent
+        description: >
+          The sub-continent where the user is located based on IP address.
+
+      - name: geo_country
+        description: >
+          The country where the user is located based on IP address.
+
+      - name: geo_region
+        description: >
+          The region or state where the user is located based on IP address.
+
+      - name: geo_city
+        description: >
+          The city where the user is located based on IP address.

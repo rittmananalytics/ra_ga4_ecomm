@@ -1,0 +1,47 @@
+version: 2
+
+sources:
+  - name: ga4_obfuscated_sample_ecommerce
+    database: bigquery-public-data
+    schema: ga4_obfuscated_sample_ecommerce
+    description: >
+      Google Analytics 4 obfuscated sample ecommerce dataset from BigQuery Public Data.
+      Contains event-level data from a sample ecommerce site.
+
+    tables:
+      - name: events_
+        description: >
+          Wildcard table containing all GA4 events. Use with _TABLE_SUFFIX filter
+          to query specific date ranges. Each row is an individual event.
+        identifier: "events_*"
+
+        columns:
+          - name: event_date
+            description: The date when the event was logged (YYYYMMDD format)
+
+          - name: event_timestamp
+            description: The time (in microseconds, UTC) when the event was logged
+
+          - name: event_name
+            description: The name of the event
+
+          - name: user_pseudo_id
+            description: The pseudonymous ID for the user
+
+          - name: event_params
+            description: Array of event parameters (key-value pairs)
+
+          - name: ecommerce
+            description: Ecommerce-related event parameters
+
+          - name: items
+            description: Array of items associated with the event
+
+          - name: traffic_source
+            description: Traffic source information
+
+          - name: device
+            description: Device information
+
+          - name: geo
+            description: Geographic information
