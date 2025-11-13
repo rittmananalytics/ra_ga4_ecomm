@@ -7,7 +7,8 @@
             "data_type": "date",
             "granularity": "day"
         },
-        cluster_by = ["user_pseudo_id"]
+        cluster_by = ["user_pseudo_id"],
+        enabled = var('enable_ga4_source', true)
     )
 }}
 

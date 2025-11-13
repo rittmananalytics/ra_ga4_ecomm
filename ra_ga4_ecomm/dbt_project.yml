@@ -26,10 +26,17 @@ clean-targets:         # directories to be removed by `dbt clean`
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
+vars:
+  enable_ga4_source: true
+  enable_snowplow_source: true
+
 models:
   ra_ga4_ecomm:
     staging:
       +materialized: view
       +schema: staging
+    integration:
+      +materialized: view
+      +schema: integration
     warehouse:
       +materialized: table

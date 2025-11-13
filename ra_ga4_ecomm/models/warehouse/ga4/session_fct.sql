@@ -13,9 +13,9 @@
 
 with
 
-s_events as (
+s_sessions as (
 
-    select * from {{ ref('stg_ga4__event') }}
+    select * from {{ ref('int__session') }}
     {% if is_incremental() %}
         where event_date > (
             select max(event_date) from {{ this }}
@@ -24,94 +24,21 @@ s_events as (
 
 ),
 
-session_aggregations as (
+session_with_keys as (
 
     select
         -- primary key
         {{ dbt_utils.generate_surrogate_key([
+            'source',
             'event_date',
-            'user_pseudo_id',
+            'user_fk',
             'ga_session_id'
         ]) }} as session_pk,
 
-        -- foreign keys
-        user_pseudo_id as user_fk,
+        -- all fields from integration
+        *
 
-        -- dates
-        event_date,
-
-        -- identifiers
-        ga_session_id,
-
-        -- timestamps
-        min(event_ts) as session_start_ts,
-        max(event_ts) as session_end_ts,
-
-        -- session metrics
-        timestamp_diff(max(event_ts), min(event_ts), second)
-            as session_duration_seconds,
-        count(
-            case when event_name = 'page_view' then 1 end
-        ) as page_views_per_session,
-        count(*) as events_per_session,
-        sum(
-            case
-                when (
-                    select value.string_value
-                    from unnest(event_params)
-                    where key = 'engagement_time_msec'
-                ) is not null
-                then cast((
-                    select value.string_value
-                    from unnest(event_params)
-                    where key = 'engagement_time_msec'
-                ) as int64)
-                else 0
-            end
-        ) as session_engagement_time_msec,
-
-        -- conversion metrics
-        count(
-            case when event_name = 'purchase' then 1 end
-        ) as purchase_events_per_session,
-        sum(
-            case
-                when event_name = 'purchase'
-                then ecommerce.purchase_revenue_in_usd
-                else 0
-            end
-        ) as purchase_revenue_per_session,
-        case
-            when count(
-                case when event_name = 'purchase' then 1 end
-            ) > 0
-            then 1
-            else 0
-        end as is_conversion_session,
-
-        -- traffic source
-        any_value(traffic_source_name) as traffic_source_name,
-        any_value(traffic_source_medium) as traffic_source_medium,
-        any_value(traffic_source_source) as traffic_source_source,
-
-        -- device
-        any_value(device_category) as device_category,
-        any_value(device_operating_system) as device_operating_system,
-        any_value(device_browser) as device_browser,
-
-        -- geography
-        any_value(geo_continent) as geo_continent,
-        any_value(geo_sub_continent) as geo_sub_continent,
-        any_value(geo_country) as geo_country,
-        any_value(geo_region) as geo_region,
-        any_value(geo_city) as geo_city
-
-    from s_events
-    where ga_session_id is not null
-    group by
-        event_date,
-        user_pseudo_id,
-        ga_session_id
+    from s_sessions
 
 ),
 
@@ -121,6 +48,9 @@ final as (
         -- primary key
         session_pk,
 
+        -- source identifier
+        source,
+
         -- foreign keys
         user_fk,
 
@@ -129,6 +59,7 @@ final as (
 
         -- identifiers
         ga_session_id,
+        session_index,
 
         -- timestamps
         session_start_ts,
@@ -149,20 +80,42 @@ final as (
         traffic_source_name,
         traffic_source_medium,
         traffic_source_source,
+        traffic_source_content,
+        traffic_source_term,
 
         -- device
         device_category,
         device_operating_system,
         device_browser,
+        device_language,
+
+        -- device details (Snowplow-specific)
+        browser_family,
+        browser_name,
+        browser_version,
+        device_type,
+        device_is_mobile,
+        device_screen_height,
+        device_screen_width,
 
         -- geography
         geo_continent,
         geo_sub_continent,
         geo_country,
         geo_region,
-        geo_city
+        geo_region_name,
+        geo_city,
+        geo_zipcode,
+        geo_latitude,
+        geo_longitude,
+        geo_timezone,
 
-    from session_aggregations
+        -- user properties (Snowplow-specific)
+        user_customer_segment,
+        user_loyalty_tier,
+        user_subscription_status
+
+    from session_with_keys
 
 )
 

@@ -45,3 +45,56 @@ sources:
 
           - name: geo
             description: Geographic information
+
+  - name: snowplow_ecommerce_sample
+    database: ra-warehouse-dev
+    schema: snowplow_ecommerce_sample
+    description: >
+      Snowplow event tracking data with GA4 ecommerce events captured via
+      GTM and sent to both GA4 and Snowplow. Contains 100 sample events.
+
+    tables:
+      - name: events
+        description: >
+          Snowplow events table with GA4 ecommerce plugin enabled. Each row
+          is an individual event with Snowplow-specific enrichments.
+
+        columns:
+          - name: event_id
+            description: Unique identifier for the event (UUID)
+
+          - name: event_name
+            description: The name of the event (e.g., add_to_cart, purchase)
+
+          - name: collector_tstamp
+            description: The timestamp when the event was collected
+
+          - name: user_pseudo_id
+            description: The pseudonymous ID for the user
+
+          - name: session_id
+            description: The session identifier
+
+          - name: ecommerce
+            description: Ecommerce-related event parameters
+
+          - name: device
+            description: Device information struct
+
+          - name: geo
+            description: Geographic information struct
+
+          - name: traffic_source
+            description: Traffic source information struct
+
+          - name: page_location
+            description: The URL of the page
+
+          - name: page_title
+            description: The title of the page
+
+          - name: user_properties
+            description: Custom user properties (loyalty tier, segment, etc.)
+
+          - name: ga4_adapter
+            description: Metadata about the GA4 adapter
