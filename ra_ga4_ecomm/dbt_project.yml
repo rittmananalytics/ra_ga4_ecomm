@@ -31,6 +31,5 @@ models:
     staging:
       +materialized: view
       +schema: staging
-    marts:
+    warehouse:
       +materialized: table
-      +schema: marts

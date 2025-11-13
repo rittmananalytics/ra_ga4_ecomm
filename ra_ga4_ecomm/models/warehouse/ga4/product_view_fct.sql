@@ -31,7 +31,8 @@ product_view_events_with_items as (
         -- generate unique key for each item view
         {{ dbt_utils.generate_surrogate_key([
             'event_pk',
-            'item.item_id'
+            'item.item_id',
+            'item_offset'
         ]) }} as product_view_pk,
 
         -- foreign keys
@@ -86,7 +87,7 @@ product_view_events_with_items as (
         geo_city
 
     from s_events,
-    unnest(items) as item
+    unnest(items) as item with offset as item_offset
 
 ),
 

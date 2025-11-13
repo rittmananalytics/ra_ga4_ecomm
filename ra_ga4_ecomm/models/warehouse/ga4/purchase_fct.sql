@@ -41,7 +41,8 @@ purchase_events_with_items as (
         -- generate unique key for each item in purchase
         {{ dbt_utils.generate_surrogate_key([
             'event_pk',
-            'item.item_id'
+            'item.item_id',
+            'item_offset'
         ]) }} as purchase_pk,
 
         -- foreign keys
@@ -108,7 +109,7 @@ purchase_events_with_items as (
         geo_city
 
     from s_events,
-    unnest(items) as item
+    unnest(items) as item with offset as item_offset
 
 ),
 
@@ -116,108 +117,128 @@ final as (
 
     select
         -- primary key
-        purchase_pk,
+        purchase_events_with_items.purchase_pk,
 
         -- foreign keys
-        user_fk,
+        purchase_events_with_items.user_fk,
 
         -- dates
-        event_date,
+        purchase_events_with_items.event_date,
 
         -- identifiers
-        ga_session_id,
-        transaction_id,
+        purchase_events_with_items.ga_session_id,
+        purchase_events_with_items.transaction_id,
 
         -- timestamps
-        purchase_ts,
+        purchase_events_with_items.purchase_ts,
 
         -- time to purchase metrics
         timestamp_diff(
-            purchase_ts,
+            purchase_events_with_items.purchase_ts,
             s_sessions.first_session_ts,
             hour
         ) as hours_to_purchase_from_first_visit,
         timestamp_diff(
-            purchase_ts,
+            purchase_events_with_items.purchase_ts,
             s_sessions.first_session_ts,
             day
         ) as days_to_purchase_from_first_visit,
 
         -- purchase timing
-        extract(hour from purchase_ts) as purchase_hour_of_day,
-        extract(dayofweek from purchase_ts) as purchase_day_of_week,
+        extract(
+            hour from purchase_events_with_items.purchase_ts
+        ) as purchase_hour_of_day,
+        extract(
+            dayofweek from purchase_events_with_items.purchase_ts
+        ) as purchase_day_of_week,
 
         -- transaction-level metrics
-        purchase_revenue_in_usd,
-        purchase_revenue,
-        tax_value_in_usd,
-        shipping_value_in_usd,
-        total_item_quantity,
-        unique_items,
+        purchase_events_with_items.purchase_revenue_in_usd,
+        purchase_events_with_items.purchase_revenue,
+        purchase_events_with_items.tax_value_in_usd,
+        purchase_events_with_items.shipping_value_in_usd,
+        purchase_events_with_items.total_item_quantity,
+        purchase_events_with_items.unique_items,
 
         -- item details
-        item_id,
-        item_name,
-        item_brand,
-        item_variant,
+        purchase_events_with_items.item_id,
+        purchase_events_with_items.item_name,
+        purchase_events_with_items.item_brand,
+        purchase_events_with_items.item_variant,
 
         -- product category hierarchy
-        coalesce(item_category, 'Uncategorized') as category_l1,
+        coalesce(
+            purchase_events_with_items.item_category,
+            'Uncategorized'
+        ) as category_l1,
         case
-            when item_category2 = '(not set)' then null
-            else item_category2
+            when purchase_events_with_items.item_category2 = '(not set)'
+            then null
+            else purchase_events_with_items.item_category2
         end as category_l2,
         case
-            when item_category3 = '(not set)' then null
-            else item_category3
+            when purchase_events_with_items.item_category3 = '(not set)'
+            then null
+            else purchase_events_with_items.item_category3
         end as category_l3,
         case
-            when item_category4 = '(not set)' then null
-            else item_category4
+            when purchase_events_with_items.item_category4 = '(not set)'
+            then null
+            else purchase_events_with_items.item_category4
         end as category_l4,
         case
-            when item_category5 = '(not set)' then null
-            else item_category5
+            when purchase_events_with_items.item_category5 = '(not set)'
+            then null
+            else purchase_events_with_items.item_category5
         end as category_l5,
 
         -- price and quantity
-        item_price_usd,
-        item_price,
-        item_quantity,
-        item_revenue_usd,
-        item_revenue,
+        purchase_events_with_items.item_price_usd,
+        purchase_events_with_items.item_price,
+        purchase_events_with_items.item_quantity,
+        purchase_events_with_items.item_revenue_usd,
+        purchase_events_with_items.item_revenue,
 
         -- item-level metrics
-        safe_divide(item_revenue_usd, item_quantity) as unit_price_usd,
+        safe_divide(
+            purchase_events_with_items.item_revenue_usd,
+            purchase_events_with_items.item_quantity
+        ) as unit_price_usd,
 
         -- promotional info
-        coupon,
-        affiliation,
-        item_list_id,
-        item_list_name,
-        promotion_id,
-        promotion_name,
+        purchase_events_with_items.coupon,
+        purchase_events_with_items.affiliation,
+        purchase_events_with_items.item_list_id,
+        purchase_events_with_items.item_list_name,
+        purchase_events_with_items.promotion_id,
+        purchase_events_with_items.promotion_name,
 
         -- traffic source
-        traffic_source_name,
-        traffic_source_medium,
-        traffic_source_source,
+        purchase_events_with_items.traffic_source_name,
+        purchase_events_with_items.traffic_source_medium,
+        purchase_events_with_items.traffic_source_source,
         concat(
-            coalesce(traffic_source_source, '(direct)'),
+            coalesce(
+                purchase_events_with_items.traffic_source_source,
+                '(direct)'
+            ),
             ' / ',
-            coalesce(traffic_source_medium, '(none)')
+            coalesce(
+                purchase_events_with_items.traffic_source_medium,
+                '(none)'
+            )
         ) as traffic_source_full,
 
         -- device info
-        device_category,
-        device_operating_system,
-        device_browser,
+        purchase_events_with_items.device_category,
+        purchase_events_with_items.device_operating_system,
+        purchase_events_with_items.device_browser,
 
         -- geographic info
-        geo_continent,
-        geo_country,
-        geo_region,
-        geo_city
+        purchase_events_with_items.geo_continent,
+        purchase_events_with_items.geo_country,
+        purchase_events_with_items.geo_region,
+        purchase_events_with_items.geo_city
 
     from purchase_events_with_items
     left join s_sessions

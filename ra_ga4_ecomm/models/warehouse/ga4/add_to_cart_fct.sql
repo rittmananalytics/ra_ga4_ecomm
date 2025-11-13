@@ -31,7 +31,8 @@ cart_events_with_items as (
         -- generate unique key for each item in cart event
         {{ dbt_utils.generate_surrogate_key([
             'event_pk',
-            'item.item_id'
+            'item.item_id',
+            'item_offset'
         ]) }} as add_to_cart_pk,
 
         -- foreign keys
@@ -100,7 +101,7 @@ cart_events_with_items as (
         geo_city
 
     from s_events,
-    unnest(items) as item
+    unnest(items) as item with offset as item_offset
 
 ),
 

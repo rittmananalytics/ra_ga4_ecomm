@@ -1,0 +1,202 @@
+version: 2
+
+models:
+  - name: session_fct
+    description: >
+      Session-level fact table aggregating GA4 events into sessions. Each row
+      represents a unique session for a user on a specific date.
+    columns:
+      - name: session_pk
+        description: >
+          Primary key for session records. Generated using surrogate_key from
+          event_date, user_pseudo_id, and ga_session_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_fk
+        description: >
+          Foreign key to user dimension. References user_pseudo_id from GA4.
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the session occurred (UTC).
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: The GA4 session identifier.
+        tests:
+          - not_null
+
+  - name: pageview_fct
+    description: >
+      Page view fact table. Each row represents a single page view event with
+      engagement metrics and navigation context.
+    columns:
+      - name: pageview_pk
+        description: >
+          Primary key for pageview records. Uses the event_pk from staging layer.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension.
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the page view occurred (UTC).
+        tests:
+          - not_null
+
+  - name: add_to_cart_fct
+    description: >
+      Add to cart fact table. Each row represents a single item added to cart
+      with product and promotional details.
+    columns:
+      - name: add_to_cart_pk
+        description: >
+          Primary key for add to cart records. Generated from event_pk and item_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension.
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the add to cart event occurred (UTC).
+        tests:
+          - not_null
+
+      - name: item_id
+        description: The unique identifier for the product item.
+        tests:
+          - not_null
+
+  - name: purchase_fct
+    description: >
+      Purchase fact table. Each row represents a single item in a purchase
+      transaction with revenue and attribution metrics.
+    columns:
+      - name: purchase_pk
+        description: >
+          Primary key for purchase records. Generated from event_pk and item_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension.
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the purchase occurred (UTC).
+        tests:
+          - not_null
+
+      - name: item_id
+        description: The unique identifier for the purchased product item.
+        tests:
+          - not_null
+
+  - name: product_view_fct
+    description: >
+      Product view fact table. Each row represents a single product view event
+      with item details and promotional context.
+    columns:
+      - name: product_view_pk
+        description: >
+          Primary key for product view records. Generated from event_pk and item_id.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension.
+        tests:
+          - not_null
+
+      - name: event_date
+        description: The date when the product view occurred (UTC).
+        tests:
+          - not_null
+
+      - name: item_id
+        description: The unique identifier for the viewed product item.
+        tests:
+          - not_null
+
+  - name: conversion_funnel_fct
+    description: >
+      Conversion funnel aggregation fact table. Each row represents funnel
+      metrics aggregated by date, traffic source, device, and country.
+    columns:
+      - name: funnel_pk
+        description: >
+          Primary key for funnel records. Generated from event_date,
+          traffic_source_source, traffic_source_medium, device_category,
+          and geo_country.
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date for this funnel aggregation.
+        tests:
+          - not_null
+
+      - name: device_category
+        description: The device category (mobile, desktop, or tablet).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['mobile', 'desktop', 'tablet']
+
+  - name: user_dim
+    description: >
+      User dimension table with aggregated behavioral metrics, RFM segmentation,
+      and attribution data. Each row represents a unique user.
+    columns:
+      - name: user_pk
+        description: >
+          Primary key for user records. Uses user_pseudo_id from GA4.
+        tests:
+          - unique
+          - not_null
+
+      - name: total_sessions
+        description: Total number of sessions for this user.
+        tests:
+          - not_null
+
+      - name: first_seen_date
+        description: The date when the user first visited.
+        tests:
+          - not_null
+
+      - name: last_seen_date
+        description: The date when the user last visited.
+        tests:
+          - not_null
+
+      - name: user_type
+        description: >
+          User classification: Repeat Buyer, One-Time Buyer, Engaged Non-Buyer,
+          or Single Visit.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Repeat Buyer'
+                  - 'One-Time Buyer'
+                  - 'Engaged Non-Buyer'
+                  - 'Single Visit'
