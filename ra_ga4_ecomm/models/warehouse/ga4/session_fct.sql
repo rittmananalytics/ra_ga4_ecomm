@@ -1,13 +1,13 @@
 {{
     config(
         materialized = 'incremental',
-        unique_key = ['event_date', 'user_pseudo_id', 'ga_session_id'],
+        unique_key = ['event_date', 'user_fk', 'ga_session_id'],
         partition_by = {
             "field": "event_date",
             "data_type": "date",
             "granularity": "day"
         },
-        cluster_by = ["user_pseudo_id", "ga_session_id"]
+        cluster_by = ["user_fk", "ga_session_id"]
     )
 }}
 
