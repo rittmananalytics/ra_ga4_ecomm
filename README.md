@@ -772,7 +772,7 @@ To add additional tracking sources:
 5. Update warehouse model surrogate keys
 6. Add tests in `[source].yml`
 
-## 🤝 Contributing
+## Extending
 
 To add new models or modify existing ones:
 1. Update the SQL in appropriate layer (`staging/`, `integration/`, `warehouse/`, `marts/`)
