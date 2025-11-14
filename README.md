@@ -2,7 +2,7 @@
 
 A comprehensive dbt package for transforming Google Analytics 4, Snowplow, and ContentSquare e-commerce and behavioral data into analytics-ready models with web analytics, e-commerce, UX metrics, and conversion rate analytics.
 
-## 🎯 Multi-Source Support
+## Multi-Source Support
 
 This package supports **unified analytics across multiple tracking sources**:
 
@@ -19,11 +19,11 @@ All sources are seamlessly integrated through a three-tier architecture:
 
 When using Snowplow with the **GA4 Ecommerce Adapter**, events sent through Google Tag Manager are captured by both GA4 and Snowplow simultaneously. This package automatically:
 
-- ✅ Maps Snowplow event schemas to GA4-compatible structures
-- ✅ Unions data from both sources with a common `source` column
-- ✅ Preserves Snowplow-specific enrichments (browser details, enhanced geography, user properties)
-- ✅ Handles schema differences in ecommerce items arrays
-- ✅ Supports flexible source enabling/disabling via configuration
+- Maps Snowplow event schemas to GA4-compatible structures
+- Unions data from both sources with a common `source` column
+- Preserves Snowplow-specific enrichments (browser details, enhanced geography, user properties)
+- Handles schema differences in ecommerce items arrays
+- Supports flexible source enabling/disabling via configuration
 
 **Key Benefits:**
 - **Data Redundancy**: Compare metrics across tracking systems
@@ -35,12 +35,12 @@ When using Snowplow with the **GA4 Ecommerce Adapter**, events sent through Goog
 
 **ContentSquare** provides specialized behavioral analytics and UX insights that complement traditional web analytics. This package automatically:
 
-- ✅ Integrates ContentSquare sessions and pageviews with GA4/Snowplow data
-- ✅ Preserves ContentSquare-specific **Web Vitals** metrics (FID, LCP, CLS, INP, TTFB)
-- ✅ Captures **frustration signals** (rage clicks, excessive hovering, looping)
-- ✅ Tracks **JavaScript errors** and **API errors** for debugging
-- ✅ Provides **UX scoring** (frustration score, page consumption, looping index)
-- ✅ Enables cross-source behavioral analysis with unified session/user IDs
+- Integrates ContentSquare sessions and pageviews with GA4/Snowplow data
+- Preserves ContentSquare-specific **Web Vitals** metrics (FID, LCP, CLS, INP, TTFB)
+- Captures **frustration signals** (rage clicks, excessive hovering, looping)
+- Tracks **JavaScript errors** and **API errors** for debugging
+- Provides **UX scoring** (frustration score, page consumption, looping index)
+- Enables cross-source behavioral analysis with unified session/user IDs
 
 **Key Differences from GA4/Snowplow:**
 - **Pre-aggregated sessions**: ContentSquare provides session-level data directly
@@ -57,7 +57,7 @@ When using Snowplow with the **GA4 Ecommerce Adapter**, events sent through Goog
 - `session_fct`: Sessions with ContentSquare frustration scoring
 - `pageview_fct`: Pageviews with ContentSquare Web Vitals
 
-## 📊 Models
+## Models
 
 ### Mart Models
 
@@ -148,7 +148,7 @@ Daily conversion funnel metrics with drop-off analysis.
   - Drop-off counts and rates at each stage
   - Segmented by traffic source, device, and geography
 
-## ⚙️ Configuration
+## Configuration
 
 ### Enabling/Disabling Data Sources
 
@@ -176,7 +176,7 @@ When multiple sources are enabled, data is automatically unioned in the integrat
 - ContentSquare-specific behavioral fact tables (rage_click_fct, js_error_fct, user_interaction_fct)
 - Web Vitals and UX metrics available in integrated models
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ra_ga4_ecomm/
@@ -263,7 +263,7 @@ ra_ga4_ecomm/
 - Simplified column names
 - Documentation and examples
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Run All Models (Full Refresh)
 ```bash
@@ -307,23 +307,23 @@ All models include:
 | Product Views | 2,748,246 | 53 | 2,748,299 |
 
 **Quality Metrics:**
-- ✅ **361K** sessions aggregated from both sources
-- ✅ **270K** unique users identified
-- ✅ **1.35M** page views processed with navigation flow
-- ✅ **667K** add-to-cart events tracked
-- ✅ **2.75M** product views recorded
-- ✅ **16K** purchase items processed
-- ✅ **$362K** total revenue tracked
-- ✅ **4,419** users with purchases
-- ✅ **775** repeat buyers
-- ✅ **86/86** data quality tests passing (100% pass rate)
+- **361K** sessions aggregated from both sources
+- **270K** unique users identified
+- **1.35M** page views processed with navigation flow
+- **667K** add-to-cart events tracked
+- **2.75M** product views recorded
+- **16K** purchase items processed
+- **$362K** total revenue tracked
+- **4,419** users with purchases
+- **775** repeat buyers
+- **86/86** data quality tests passing (100% pass rate)
 
 ### Known Data Characteristics
 - Some purchase events may have null `transaction_id` (59 out of 16K) - this is present in the source data
 - Funnel progressions may not be strictly hierarchical (users can skip steps in GA4 e-commerce tracking)
 - Small rounding differences (~$55 out of $362K) between revenue aggregations are expected
 
-## 🎁 Snowplow-Specific Enrichments
+## Snowplow-Specific Enrichments
 
 When Snowplow data is enabled, the following additional fields are available in all warehouse fact tables:
 
@@ -377,7 +377,7 @@ GROUP BY 1, 2, 3, 4, 5
 ORDER BY sessions DESC;
 ```
 
-## 🎨 ContentSquare-Specific Enrichments
+## ContentSquare-Specific Enrichments
 
 When ContentSquare data is enabled, the following additional fields are available:
 
@@ -477,7 +477,7 @@ GROUP BY 1
 ORDER BY 1;
 ```
 
-## 🏗️ Incremental Loading
+## Incremental Loading
 
 All event-based models support incremental loading:
 - Only processes new data based on `event_date`
@@ -495,7 +495,7 @@ To rebuild everything:
 dbt run --full-refresh
 ```
 
-## 📊 Key Business Metrics
+## Key Business Metrics
 
 ### Web Analytics
 - **Sessions**: 361K
@@ -671,7 +671,7 @@ LIMIT 20;
 - **Warehouse Tests**: 38 (covering all fact tables and dimensions)
 - **Pass Rate**: 100%
 
-## 🔧 Technical Implementation: Snowplow Integration
+## Technical Implementation: Snowplow Integration
 
 ### How the Integration Works
 
@@ -699,10 +699,10 @@ array(
 ```
 
 This ensures:
-- ✅ Successful UNION ALL operations
-- ✅ Consistent data types across sources
-- ✅ Preservation of source-specific fields
-- ✅ NULL handling for missing fields
+- Successful UNION ALL operations
+- Consistent data types across sources
+- Preservation of source-specific fields
+- NULL handling for missing fields
 
 #### 3. **Conditional Source Loading**
 
