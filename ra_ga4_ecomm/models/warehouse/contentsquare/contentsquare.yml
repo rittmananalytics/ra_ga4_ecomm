@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: rage_click_fct
+    description: >
+      Fact table for ContentSquare rage click frustration events.
+      Captures frustrated clicking behavior indicating user difficulty with page elements.
+    columns:
+      - name: rage_click_pk
+        description: Primary key for the rage click event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: frustration_score
+        description: Frustration score for the event
+        tests:
+          - not_null
+
+  - name: js_error_fct
+    description: >
+      Fact table for ContentSquare JavaScript error events.
+      Captures JS errors occurring during user sessions for debugging and UX improvement.
+    columns:
+      - name: js_error_pk
+        description: Primary key for the JS error event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: error_message
+        description: Error message text
+        tests:
+          - not_null
+
+  - name: user_interaction_fct
+    description: >
+      Fact table for ContentSquare user interaction events including add to cart.
+      Captures user interactions with page elements for behavioral analysis.
+    columns:
+      - name: interaction_pk
+        description: Primary key for the interaction event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: event_name
+        description: Name of the interaction event
+        tests:
+          - not_null

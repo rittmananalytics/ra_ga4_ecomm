@@ -98,3 +98,81 @@ sources:
 
           - name: ga4_adapter
             description: Metadata about the GA4 adapter
+
+  - name: contentsquare
+    database: ra-warehouse-dev
+    schema: contentsquare
+    description: >
+      ContentSquare digital experience analytics data including user behavior,
+      UX metrics, frustration signals, and performance data.
+
+    tables:
+      - name: sessions
+        description: >
+          Session-level data with frustration scoring and session metrics.
+          Each row represents a complete session.
+
+      - name: pageviews
+        description: >
+          Page view events with Web Vitals performance metrics and engagement data.
+          Each row represents a single page view.
+
+      - name: add_to_cart
+        description: >
+          Add to cart events captured by ContentSquare. Each row represents
+          a single add to cart interaction.
+
+      - name: ecommerce_transactions
+        description: >
+          Transaction-level ecommerce data with revenue and currency.
+          Note: Contains transaction totals only, no item-level details.
+
+      - name: rage_click
+        description: >
+          Rage click frustration signals indicating user difficulty.
+          Each row represents a frustration event.
+
+      - name: excessive_hovering
+        description: >
+          Excessive hovering behavior indicating potential user confusion.
+          Each row represents a hovering event.
+
+      - name: js_errors
+        description: >
+          JavaScript errors captured during user sessions.
+          Each row represents a single error occurrence.
+
+      - name: api_errors
+        description: >
+          API errors captured during user sessions.
+          Each row represents a single API error.
+
+      - name: custom_errors
+        description: >
+          Custom error events configured in ContentSquare.
+          Each row represents a custom error occurrence.
+
+      - name: loading_time_high
+        description: >
+          Events indicating high page loading times.
+          Each row represents a slow loading occurrence.
+
+      - name: low_activity
+        description: >
+          Low activity events indicating minimal user engagement.
+          Each row represents a low activity signal.
+
+      - name: multiple_button_interactions
+        description: >
+          Events indicating users clicked the same button multiple times.
+          Each row represents a multi-click event.
+
+      - name: multiple_field_interactions
+        description: >
+          Events indicating users interacted with the same form field multiple times.
+          Each row represents a multi-interaction event.
+
+      - name: multiple_use_element
+        description: >
+          Events indicating users interacted with the same element multiple times.
+          Each row represents a multi-use event.

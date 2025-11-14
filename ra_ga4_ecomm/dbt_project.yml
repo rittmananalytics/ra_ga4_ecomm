@@ -29,6 +29,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 vars:
   enable_ga4_source: true
   enable_snowplow_source: true
+  enable_contentsquare_source: true
 
 models:
   ra_ga4_ecomm:

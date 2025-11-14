@@ -1,21 +1,22 @@
 {{
     config(
         materialized = 'incremental',
-        unique_key = ['event_date', 'user_fk', 'ga_session_id'],
+        unique_key = 'interaction_pk',
         partition_by = {
             "field": "event_date",
             "data_type": "date",
             "granularity": "day"
         },
-        cluster_by = ["user_fk", "ga_session_id"]
+        cluster_by = ["user_fk", "ga_session_id"],
+        enabled = var('enable_contentsquare_source', false)
     )
 }}
 
 with
 
-s_sessions as (
+s_add_to_cart as (
 
-    select * from {{ ref('int__session') }}
+    select * from {{ ref('stg_contentsquare__add_to_cart') }}
     {% if is_incremental() %}
         where event_date > (
             select max(event_date) from {{ this }}
@@ -24,21 +25,18 @@ s_sessions as (
 
 ),
 
-session_with_keys as (
+interactions_with_keys as (
 
     select
         -- primary key
         {{ dbt_utils.generate_surrogate_key([
-            'source',
-            'event_date',
-            'user_fk',
-            'ga_session_id'
-        ]) }} as session_pk,
+            'event_pk'
+        ]) }} as interaction_pk,
 
-        -- all fields from integration
+        -- all fields from staging
         *
 
-    from s_sessions
+    from s_add_to_cart
 
 ),
 
@@ -46,35 +44,34 @@ final as (
 
     select
         -- primary key
-        session_pk,
-
-        -- source identifier
-        source,
+        interaction_pk,
 
         -- foreign keys
-        user_fk,
+        user_pseudo_id as user_fk,
 
         -- dates
         event_date,
 
         -- identifiers
         ga_session_id,
-        session_index,
+        pageview_id,
+        event_id,
 
         -- timestamps
-        session_start_ts,
-        session_end_ts,
+        event_ts as interaction_ts,
 
-        -- session metrics
-        session_duration_seconds,
-        page_views_per_session,
-        events_per_session,
-        session_engagement_time_msec,
+        -- event details
+        event_name,
+        event_type,
 
-        -- conversion metrics
-        purchase_events_per_session,
-        purchase_revenue_per_session,
-        is_conversion_session,
+        -- page details
+        page_path,
+        page_query,
+        page_hash,
+        page_title,
+        domain,
+        href,
+        target_text,
 
         -- traffic source
         traffic_source_name,
@@ -82,6 +79,7 @@ final as (
         traffic_source_source,
         traffic_source_content,
         traffic_source_term,
+        utm_campaign,
 
         -- device
         device_category,
@@ -89,9 +87,9 @@ final as (
         device_browser,
         device_language,
 
-        -- device details (Snowplow-specific)
-        browser_family,
+        -- device details
         browser_name,
+        browser_family,
         browser_version,
         device_type,
         device_is_mobile,
@@ -110,17 +108,13 @@ final as (
         geo_longitude,
         geo_timezone,
 
-        -- user properties (Snowplow-specific)
-        user_customer_segment,
-        user_loyalty_tier,
-        user_subscription_status,
+        -- ContentSquare-specific
+        referrer,
+        landing_page,
+        landing_page_query,
+        landing_page_hash
 
-        -- ContentSquare-specific session metrics
-        frustration_score,
-        looping_index,
-        page_consumption
-
-    from session_with_keys
+    from interactions_with_keys
 
 )
 

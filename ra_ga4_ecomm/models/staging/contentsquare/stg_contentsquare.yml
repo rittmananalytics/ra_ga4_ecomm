@@ -1,0 +1,193 @@
+version: 2
+
+models:
+  - name: stg_contentsquare__pageview
+    description: >
+      Staging model for ContentSquare pageview events.
+      Maps ContentSquare pageview schema to common event schema with Web Vitals metrics.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from ContentSquare
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier (cast from ContentSquare session_id)
+        tests:
+          - not_null
+
+      - name: event_name
+        description: Name of the event (page_view)
+        tests:
+          - not_null
+
+  - name: stg_contentsquare__add_to_cart
+    description: >
+      Staging model for ContentSquare add to cart events.
+      Maps ContentSquare add_to_cart schema to common event schema.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from ContentSquare
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: event_name
+        description: Name of the event (add_to_cart)
+        tests:
+          - not_null
+
+  - name: stg_contentsquare__purchase
+    description: >
+      Staging model for ContentSquare ecommerce transactions.
+      Maps ContentSquare transaction schema to common event schema.
+      Note: ContentSquare transactions do not include item-level details.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from ContentSquare
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: event_name
+        description: Name of the event (purchase)
+        tests:
+          - not_null
+
+      - name: transaction_amount
+        description: Transaction amount
+        tests:
+          - not_null
+
+      - name: transaction_currency
+        description: Transaction currency code
+        tests:
+          - not_null
+
+  - name: stg_contentsquare__rage_click
+    description: >
+      Staging model for ContentSquare rage click frustration events.
+      Captures frustrated clicking behavior indicating user difficulty.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from ContentSquare
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: frustration_score
+        description: Frustration score for the event
+        tests:
+          - not_null
+
+  - name: stg_contentsquare__js_error
+    description: >
+      Staging model for ContentSquare JavaScript error events.
+      Captures JS errors occurring during user sessions.
+    columns:
+      - name: event_pk
+        description: Primary key for the event
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the event occurred (UTC)
+        tests:
+          - not_null
+
+      - name: event_ts
+        description: Timestamp when the event occurred
+        tests:
+          - not_null
+
+      - name: user_pseudo_id
+        description: User identifier from ContentSquare
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+      - name: error_message
+        description: Error message text
+        tests:
+          - not_null

@@ -7,11 +7,11 @@ models:
       Unions sessions from both tracking systems with a common schema and source identifier.
     columns:
       - name: source
-        description: Data source identifier (ga4 or snowplow)
+        description: Data source identifier (ga4, snowplow, or contentsquare)
         tests:
           - not_null
           - accepted_values:
-              values: ['ga4', 'snowplow']
+              values: ['ga4', 'snowplow', 'contentsquare']
 
       - name: event_date
         description: The date when the session occurred (UTC)
@@ -39,11 +39,11 @@ models:
       Each row represents a page view event with engagement metrics.
     columns:
       - name: source
-        description: Data source identifier (ga4 or snowplow)
+        description: Data source identifier (ga4, snowplow, or contentsquare)
         tests:
           - not_null
           - accepted_values:
-              values: ['ga4', 'snowplow']
+              values: ['ga4', 'snowplow', 'contentsquare']
 
       - name: event_pk
         description: Primary key for the event from staging layer
@@ -76,11 +76,11 @@ models:
       Contains ecommerce data with items arrays normalized to common schema.
     columns:
       - name: source
-        description: Data source identifier (ga4 or snowplow)
+        description: Data source identifier (ga4, snowplow, or contentsquare)
         tests:
           - not_null
           - accepted_values:
-              values: ['ga4', 'snowplow']
+              values: ['ga4', 'snowplow', 'contentsquare']
 
       - name: event_pk
         description: Primary key for the event from staging layer
@@ -113,11 +113,11 @@ models:
       Contains transaction data with items arrays normalized to common schema.
     columns:
       - name: source
-        description: Data source identifier (ga4 or snowplow)
+        description: Data source identifier (ga4, snowplow, or contentsquare)
         tests:
           - not_null
           - accepted_values:
-              values: ['ga4', 'snowplow']
+              values: ['ga4', 'snowplow', 'contentsquare']
 
       - name: event_pk
         description: Primary key for the event from staging layer
@@ -150,11 +150,11 @@ models:
       Contains product browsing data with items arrays normalized to common schema.
     columns:
       - name: source
-        description: Data source identifier (ga4 or snowplow)
+        description: Data source identifier (ga4, snowplow, or contentsquare)
         tests:
           - not_null
           - accepted_values:
-              values: ['ga4', 'snowplow']
+              values: ['ga4', 'snowplow', 'contentsquare']
 
       - name: event_pk
         description: Primary key for the event from staging layer

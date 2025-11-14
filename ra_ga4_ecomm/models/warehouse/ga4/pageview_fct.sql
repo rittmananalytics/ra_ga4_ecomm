@@ -188,7 +188,22 @@ final as (
         geo_zipcode,
         geo_latitude,
         geo_longitude,
-        geo_timezone
+        geo_timezone,
+
+        -- ContentSquare-specific Web Vitals
+        first_input_delay,
+        interaction_to_next_paint,
+        time_to_first_byte,
+        largest_contentful_paint,
+        cumulative_layout_shift,
+        dom_interactive_after_msec,
+        fully_loaded,
+        first_contentful_paint,
+        start_render,
+        window_height,
+        window_width,
+        scroll_rate,
+        view_duration_msec
 
     from pageviews_with_keys
 

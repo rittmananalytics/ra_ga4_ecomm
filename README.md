@@ -1,6 +1,6 @@
 # GA4 E-commerce Analytics - dbt Package
 
-A comprehensive dbt package for transforming Google Analytics 4 and Snowplow e-commerce data into analytics-ready models with web analytics, e-commerce, and conversion rate analytics metrics.
+A comprehensive dbt package for transforming Google Analytics 4, Snowplow, and ContentSquare e-commerce and behavioral data into analytics-ready models with web analytics, e-commerce, UX metrics, and conversion rate analytics.
 
 ## 🎯 Multi-Source Support
 
@@ -8,8 +8,9 @@ This package supports **unified analytics across multiple tracking sources**:
 
 - **GA4**: Google Analytics 4 e-commerce events
 - **Snowplow**: Snowplow event tracking with GA4 Ecommerce Adapter
+- **ContentSquare**: Digital experience analytics with UX metrics and frustration signals
 
-Both sources are seamlessly integrated through a three-tier architecture:
+All sources are seamlessly integrated through a three-tier architecture:
 1. **Staging Layer**: Source-specific transformations
 2. **Integration Layer**: Unified schemas with source identification
 3. **Warehouse Layer**: Analytics-ready fact tables and dimensions
@@ -29,6 +30,32 @@ When using Snowplow with the **GA4 Ecommerce Adapter**, events sent through Goog
 - **Enhanced Data**: Access Snowplow's additional enrichments alongside GA4 data
 - **Flexible Analysis**: Analyze by source or combined metrics
 - **Migration Path**: Easy transition between tracking platforms
+
+### ContentSquare Digital Experience Analytics
+
+**ContentSquare** provides specialized behavioral analytics and UX insights that complement traditional web analytics. This package automatically:
+
+- ✅ Integrates ContentSquare sessions and pageviews with GA4/Snowplow data
+- ✅ Preserves ContentSquare-specific **Web Vitals** metrics (FID, LCP, CLS, INP, TTFB)
+- ✅ Captures **frustration signals** (rage clicks, excessive hovering, looping)
+- ✅ Tracks **JavaScript errors** and **API errors** for debugging
+- ✅ Provides **UX scoring** (frustration score, page consumption, looping index)
+- ✅ Enables cross-source behavioral analysis with unified session/user IDs
+
+**Key Differences from GA4/Snowplow:**
+- **Pre-aggregated sessions**: ContentSquare provides session-level data directly
+- **No item-level ecommerce**: Transactions tracked at total level only (no items array)
+- **Rich UX metrics**: Built-in frustration scoring and engagement metrics
+- **Error tracking**: Comprehensive error and performance issue capture
+
+**ContentSquare-Specific Fact Tables:**
+- `rage_click_fct`: Frustration events (rage clicks, excessive hovering)
+- `js_error_fct`: JavaScript error events with stack traces
+- `user_interaction_fct`: User interactions (add to cart, clicks) without item details
+
+**Integrated Tables (ContentSquare + GA4 + Snowplow):**
+- `session_fct`: Sessions with ContentSquare frustration scoring
+- `pageview_fct`: Pageviews with ContentSquare Web Vitals
 
 ## 📊 Models
 
@@ -129,16 +156,25 @@ Control which tracking sources are included in your analytics via `dbt_project.y
 
 ```yaml
 vars:
-  enable_ga4_source: true      # Enable/disable GA4 data
-  enable_snowplow_source: true  # Enable/disable Snowplow data
+  enable_ga4_source: true          # Enable/disable GA4 data
+  enable_snowplow_source: true      # Enable/disable Snowplow data
+  enable_contentsquare_source: true # Enable/disable ContentSquare data
 ```
 
 **Configuration Options:**
-- **Both enabled** (recommended): Union data from both sources for complete coverage
-- **GA4 only**: `enable_ga4_source: true`, `enable_snowplow_source: false`
-- **Snowplow only**: `enable_ga4_source: false`, `enable_snowplow_source: true`
+- **All enabled** (recommended): Union data from all sources for complete analytics coverage
+- **GA4 only**: `enable_ga4_source: true`, others `false`
+- **Snowplow only**: `enable_snowplow_source: true`, others `false`
+- **ContentSquare only**: `enable_contentsquare_source: true`, others `false`
+- **GA4 + Snowplow**: Both `true`, `enable_contentsquare_source: false`
+- **GA4 + ContentSquare**: `enable_ga4_source: true`, `enable_contentsquare_source: true`
 
-When both sources are enabled, data is automatically unioned in the integration layer with a `source` column identifying the origin (ga4/snowplow).
+When multiple sources are enabled, data is automatically unioned in the integration layer with a `source` column identifying the origin (ga4/snowplow/contentsquare).
+
+**Note**: ContentSquare integration includes:
+- Sessions and pageviews unified with GA4/Snowplow
+- ContentSquare-specific behavioral fact tables (rage_click_fct, js_error_fct, user_interaction_fct)
+- Web Vitals and UX metrics available in integrated models
 
 ## 📁 Project Structure
 
@@ -149,26 +185,38 @@ ra_ga4_ecomm/
 │   │   ├── ga4/
 │   │   │   ├── stg_ga4__event.sql          # GA4 staging model
 │   │   │   └── stg_ga4.yml                 # GA4 tests & documentation
-│   │   └── snowplow/
-│   │       ├── stg_snowplow__event.sql     # Snowplow staging model
-│   │       └── stg_snowplow.yml            # Snowplow tests & documentation
+│   │   ├── snowplow/
+│   │   │   ├── stg_snowplow__event.sql     # Snowplow staging model
+│   │   │   └── stg_snowplow.yml            # Snowplow tests & documentation
+│   │   └── contentsquare/
+│   │       ├── stg_contentsquare__pageview.sql      # CS pageview staging
+│   │       ├── stg_contentsquare__add_to_cart.sql   # CS add to cart staging
+│   │       ├── stg_contentsquare__purchase.sql      # CS purchase staging
+│   │       ├── stg_contentsquare__rage_click.sql    # CS rage click staging
+│   │       ├── stg_contentsquare__js_error.sql      # CS error staging
+│   │       └── stg_contentsquare.yml                # CS tests & documentation
 │   ├── integration/
-│   │   ├── int__session.sql                # Unified session data
-│   │   ├── int__pageview.sql               # Unified pageview data
-│   │   ├── int__add_to_cart.sql            # Unified cart events
-│   │   ├── int__purchase.sql               # Unified purchase events
-│   │   ├── int__product_view.sql           # Unified product views
+│   │   ├── int__session.sql                # Unified session data (GA4 + Snowplow + CS)
+│   │   ├── int__pageview.sql               # Unified pageview data (GA4 + Snowplow + CS)
+│   │   ├── int__add_to_cart.sql            # Unified cart events (GA4 + Snowplow)
+│   │   ├── int__purchase.sql               # Unified purchase events (GA4 + Snowplow)
+│   │   ├── int__product_view.sql           # Unified product views (GA4 + Snowplow)
 │   │   └── integration.yml                 # Integration tests & documentation
 │   ├── warehouse/
-│   │   └── ga4/
-│   │       ├── session_fct.sql             # Session fact table
-│   │       ├── pageview_fct.sql            # Pageview fact table
-│   │       ├── add_to_cart_fct.sql         # Add to cart fact table
-│   │       ├── purchase_fct.sql            # Purchase fact table
-│   │       ├── product_view_fct.sql        # Product view fact table
-│   │       ├── user_dim.sql                # User dimension
-│   │       ├── conversion_funnel_fct.sql   # Conversion funnel
-│   │       └── ga4.yml                     # Warehouse tests & documentation
+│   │   ├── ga4/
+│   │   │   ├── session_fct.sql             # Session fact table
+│   │   │   ├── pageview_fct.sql            # Pageview fact table
+│   │   │   ├── add_to_cart_fct.sql         # Add to cart fact table
+│   │   │   ├── purchase_fct.sql            # Purchase fact table
+│   │   │   ├── product_view_fct.sql        # Product view fact table
+│   │   │   ├── user_dim.sql                # User dimension
+│   │   │   ├── conversion_funnel_fct.sql   # Conversion funnel
+│   │   │   └── ga4.yml                     # Warehouse tests & documentation
+│   │   └── contentsquare/
+│   │       ├── rage_click_fct.sql          # Rage click fact table
+│   │       ├── js_error_fct.sql            # JavaScript error fact table
+│   │       ├── user_interaction_fct.sql    # User interaction fact table
+│   │       └── contentsquare.yml           # CS warehouse tests & documentation
 │   ├── marts/
 │   │   ├── sessions.sql                    # Session mart (view)
 │   │   ├── pageviews.sql                   # Pageview mart (view)
@@ -321,6 +369,106 @@ FROM `ra-warehouse-dev.analytics_ga4.session_fct`
 WHERE device_is_mobile IS NOT NULL  -- Snowplow sessions only
 GROUP BY 1, 2, 3, 4, 5
 ORDER BY sessions DESC;
+```
+
+## 🎨 ContentSquare-Specific Enrichments
+
+When ContentSquare data is enabled, the following additional fields are available:
+
+### Web Vitals (Performance Metrics) - `pageview_fct`
+**Core Web Vitals:**
+- `first_input_delay` (FID) - Time from user interaction to browser response (ms)
+- `largest_contentful_paint` (LCP) - Largest content render time (ms)
+- `cumulative_layout_shift` (CLS) - Visual stability score
+- `interaction_to_next_paint` (INP) - Interaction responsiveness (ms)
+
+**Additional Performance Metrics:**
+- `time_to_first_byte` (TTFB) - Server response time (ms)
+- `first_contentful_paint` (FCP) - First content render time (ms)
+- `dom_interactive_after_msec` - DOM ready time (ms)
+- `fully_loaded` - Complete page load time (ms)
+- `start_render` - Initial render time (ms)
+
+**Engagement Metrics:**
+- `scroll_rate` - Percentage of page scrolled (0-100)
+- `view_duration_msec` - Time spent on page (ms)
+- `window_height` - Browser window height (px)
+- `window_width` - Browser window width (px)
+
+### UX & Frustration Metrics - `session_fct`
+- `frustration_score` - Composite frustration score (0-100)
+- `looping_index` - User navigation looping behavior
+- `page_consumption` - Content consumption score
+
+### Behavioral Event Tables
+
+**`rage_click_fct` - Frustration Events:**
+- `target_text` - Text of clicked element
+- `target_path` - DOM path to element
+- `frustration_score` - Event-level frustration score
+- `relative_time` - Time into session when occurred
+- `click_count` - Number of rapid clicks
+
+**`js_error_fct` - JavaScript Errors:**
+- `error_message` - Error message text
+- `error_file_name` - File where error occurred
+- `error_line_number` - Line number of error
+- `error_column_number` - Column number of error
+- `errors_after_clicks` - Errors triggered by user action
+- `error_group_id` - Error grouping identifier
+- `error_source` - Error source type
+
+**`user_interaction_fct` - User Interactions:**
+- `target_text` - Interaction target element text
+- `href` - Link URL if applicable
+- `event_type` - Type of interaction (add_to_cart, etc.)
+- All standard traffic source and device fields
+
+**Usage Examples:**
+
+Analyze page performance issues:
+```sql
+SELECT
+  page_path,
+  AVG(largest_contentful_paint) as avg_lcp,
+  AVG(cumulative_layout_shift) as avg_cls,
+  AVG(first_input_delay) as avg_fid,
+  COUNT(*) as pageviews
+FROM `ra-warehouse-dev.analytics_ga4.pageview_fct`
+WHERE source = 'contentsquare'
+  AND largest_contentful_paint IS NOT NULL
+GROUP BY 1
+HAVING avg_lcp > 2500  -- LCP > 2.5s is poor
+ORDER BY avg_lcp DESC;
+```
+
+Identify frustration patterns:
+```sql
+SELECT
+  user_fk,
+  COUNT(DISTINCT ga_session_id) as sessions_with_rage,
+  AVG(frustration_score) as avg_frustration,
+  COUNT(*) as rage_click_events
+FROM `ra-warehouse-dev.analytics_ga4.rage_click_fct`
+GROUP BY 1
+HAVING rage_click_events > 5
+ORDER BY avg_frustration DESC;
+```
+
+Correlate errors with frustration:
+```sql
+SELECT
+  s.frustration_score,
+  COUNT(DISTINCT e.js_error_pk) as js_errors,
+  COUNT(DISTINCT r.rage_click_pk) as rage_clicks
+FROM `ra-warehouse-dev.analytics_ga4.session_fct` s
+LEFT JOIN `ra-warehouse-dev.analytics_ga4.js_error_fct` e
+  ON s.ga_session_id = e.ga_session_id
+LEFT JOIN `ra-warehouse-dev.analytics_ga4.rage_click_fct` r
+  ON s.ga_session_id = r.ga_session_id
+WHERE s.source = 'contentsquare'
+GROUP BY 1
+ORDER BY 1;
 ```
 
 ## 🏗️ Incremental Loading

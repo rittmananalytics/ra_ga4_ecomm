@@ -111,7 +111,12 @@ ga4_sessions as (
         -- user properties (Snowplow-specific, null for GA4)
         cast(null as string) as user_customer_segment,
         cast(null as string) as user_loyalty_tier,
-        cast(null as string) as user_subscription_status
+        cast(null as string) as user_subscription_status,
+
+        -- ContentSquare-specific session metrics (null for GA4)
+        cast(null as int64) as frustration_score,
+        cast(null as int64) as looping_index,
+        cast(null as int64) as page_consumption
 
     from s_ga4_events
     group by
@@ -215,13 +220,110 @@ snowplow_sessions as (
         -- user properties (Snowplow-specific)
         any_value(user_customer_segment) as user_customer_segment,
         any_value(user_loyalty_tier) as user_loyalty_tier,
-        any_value(user_subscription_status) as user_subscription_status
+        any_value(user_subscription_status) as user_subscription_status,
+
+        -- ContentSquare-specific session metrics (null for Snowplow)
+        cast(null as int64) as frustration_score,
+        cast(null as int64) as looping_index,
+        cast(null as int64) as page_consumption
 
     from s_snowplow_events
     group by
         event_date,
         user_pseudo_id,
         cast(ga_session_id as string)
+
+),
+{% endif %}
+
+{% if var('enable_contentsquare_source', false) %}
+s_contentsquare_sessions as (
+
+    select * from {{ source('contentsquare', 'sessions') }}
+
+),
+
+contentsquare_sessions as (
+
+    select
+        -- source identifier
+        'contentsquare' as source,
+
+        -- dates
+        cast(time as date) as event_date,
+
+        -- identifiers
+        cast(user_id as string) as user_fk,
+        cast(session_id as string) as ga_session_id,
+        cast(null as int64) as session_index,
+
+        -- timestamps (ContentSquare provides session start time)
+        time as session_start_ts,
+        timestamp_add(
+            time,
+            interval safe_cast(session_duration as int64) second
+        ) as session_end_ts,
+
+        -- session metrics (ContentSquare pre-aggregates these)
+        safe_cast(session_duration as int64) as session_duration_seconds,
+        safe_cast(session_number_of_views as int64) as page_views_per_session,
+        safe_cast(session_number_of_views as int64) as events_per_session,  -- approximate
+        cast(null as int64) as session_engagement_time_msec,
+
+        -- conversion metrics (ContentSquare doesn't track purchases in sessions table)
+        cast(null as int64) as purchase_events_per_session,
+        cast(null as float64) as purchase_revenue_per_session,
+        0 as is_conversion_session,
+
+        -- traffic source
+        cast(null as string) as traffic_source_name,
+        utm_medium as traffic_source_medium,
+        utm_source as traffic_source_source,
+        utm_content as traffic_source_content,
+        utm_term as traffic_source_term,
+
+        -- device
+        cast(null as string) as device_category,
+        platform as device_operating_system,
+        browser as device_browser,
+        session_language as device_language,
+
+        -- device details (ContentSquare-specific)
+        browser as browser_family,
+        browser as browser_name,
+        cast(null as float64) as browser_version,
+        device_type,
+        case
+            when lower(device_type) = 'mobile' then true
+            when lower(device_type) = 'desktop' then false
+            else null
+        end as device_is_mobile,
+        cast(null as int64) as device_screen_height,
+        cast(null as int64) as device_screen_width,
+
+        -- geography
+        cast(null as string) as geo_continent,
+        cast(null as string) as geo_sub_continent,
+        country as geo_country,
+        region as geo_region,
+        region as geo_region_name,
+        city as geo_city,
+        cast(null as string) as geo_zipcode,
+        cast(null as float64) as geo_latitude,
+        cast(null as float64) as geo_longitude,
+        cast(null as string) as geo_timezone,
+
+        -- user properties (null for ContentSquare)
+        cast(null as string) as user_customer_segment,
+        cast(null as string) as user_loyalty_tier,
+        cast(null as string) as user_subscription_status,
+
+        -- ContentSquare-specific session metrics (not in GA4/Snowplow)
+        safe_cast(frustration_score as int64) as frustration_score,
+        safe_cast(looping_index as int64) as looping_index,
+        safe_cast(page_consumption as int64) as page_consumption
+
+    from s_contentsquare_sessions
 
 ),
 {% endif %}
@@ -238,6 +340,14 @@ final as (
 
     {% if var('enable_snowplow_source', false) %}
     select * from snowplow_sessions
+    {% endif %}
+
+    {% if (var('enable_ga4_source', true) or var('enable_snowplow_source', false)) and var('enable_contentsquare_source', false) %}
+    union all
+    {% endif %}
+
+    {% if var('enable_contentsquare_source', false) %}
+    select * from contentsquare_sessions
     {% endif %}
 
 )
