@@ -1,57 +1,6 @@
 version: 2
 
 models:
-  - name: session_fct
-    description: >
-      Session-level fact table aggregating GA4 events into sessions. Each row
-      represents a unique session for a user on a specific date.
-    columns:
-      - name: session_pk
-        description: >
-          Primary key for session records. Generated using surrogate_key from
-          event_date, user_pseudo_id, and ga_session_id.
-        tests:
-          - unique
-          - not_null
-
-      - name: user_fk
-        description: >
-          Foreign key to user dimension. References user_pseudo_id from GA4.
-        tests:
-          - not_null
-
-      - name: event_date
-        description: The date when the session occurred (UTC).
-        tests:
-          - not_null
-
-      - name: ga_session_id
-        description: The GA4 session identifier.
-        tests:
-          - not_null
-
-  - name: pageview_fct
-    description: >
-      Page view fact table. Each row represents a single page view event with
-      engagement metrics and navigation context.
-    columns:
-      - name: pageview_pk
-        description: >
-          Primary key for pageview records. Uses the event_pk from staging layer.
-        tests:
-          - unique
-          - not_null
-
-      - name: user_fk
-        description: Foreign key to user dimension.
-        tests:
-          - not_null
-
-      - name: event_date
-        description: The date when the page view occurred (UTC).
-        tests:
-          - not_null
-
   - name: add_to_cart_fct
     description: >
       Add to cart fact table. Each row represents a single item added to cart

@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: session_fct
+    description: >
+      Fact table for user sessions from all sources (GA4, Snowplow, ContentSquare).
+      Aggregates session-level metrics including engagement, conversions, and UX scores.
+    columns:
+      - name: session_pk
+        description: Primary key for the session
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the session occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null
+
+  - name: pageview_fct
+    description: >
+      Fact table for pageview events from all sources (GA4, Snowplow, ContentSquare).
+      Includes engagement metrics, navigation flow, and Web Vitals performance data.
+    columns:
+      - name: pageview_pk
+        description: Primary key for the pageview
+        tests:
+          - unique
+          - not_null
+
+      - name: event_date
+        description: The date when the pageview occurred (UTC)
+        tests:
+          - not_null
+
+      - name: user_fk
+        description: Foreign key to user dimension
+        tests:
+          - not_null
+
+      - name: ga_session_id
+        description: Session identifier
+        tests:
+          - not_null

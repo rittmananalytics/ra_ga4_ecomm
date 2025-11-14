@@ -203,20 +203,22 @@ ra_ga4_ecomm/
 │   │   ├── int__product_view.sql           # Unified product views (GA4 + Snowplow)
 │   │   └── integration.yml                 # Integration tests & documentation
 │   ├── warehouse/
-│   │   ├── ga4/
-│   │   │   ├── session_fct.sql             # Session fact table
-│   │   │   ├── pageview_fct.sql            # Pageview fact table
+│   │   ├── web_analytics/                  # Web analytics domain
+│   │   │   ├── session_fct.sql             # Session fact table (multi-source)
+│   │   │   ├── pageview_fct.sql            # Pageview fact table (multi-source)
+│   │   │   └── web_analytics.yml           # Web analytics tests & documentation
+│   │   ├── ecommerce/                      # E-commerce domain
 │   │   │   ├── add_to_cart_fct.sql         # Add to cart fact table
 │   │   │   ├── purchase_fct.sql            # Purchase fact table
 │   │   │   ├── product_view_fct.sql        # Product view fact table
 │   │   │   ├── user_dim.sql                # User dimension
 │   │   │   ├── conversion_funnel_fct.sql   # Conversion funnel
-│   │   │   └── ga4.yml                     # Warehouse tests & documentation
-│   │   └── contentsquare/
-│   │       ├── rage_click_fct.sql          # Rage click fact table
-│   │       ├── js_error_fct.sql            # JavaScript error fact table
-│   │       ├── user_interaction_fct.sql    # User interaction fact table
-│   │       └── contentsquare.yml           # CS warehouse tests & documentation
+│   │   │   └── ecommerce.yml               # E-commerce tests & documentation
+│   │   └── digital_experience/             # Digital experience domain (ContentSquare)
+│   │       ├── rage_click_fct.sql          # Rage click frustration events
+│   │       ├── js_error_fct.sql            # JavaScript error events
+│   │       ├── user_interaction_fct.sql    # User interaction events
+│   │       └── digital_experience.yml      # DX tests & documentation
 │   ├── marts/
 │   │   ├── sessions.sql                    # Session mart (view)
 │   │   ├── pageviews.sql                   # Pageview mart (view)
@@ -247,10 +249,14 @@ ra_ga4_ecomm/
 - Handles items array schema normalization
 
 **Warehouse Layer (`warehouse/`):**
+- Organized by business domain (web_analytics, ecommerce, digital_experience)
 - Generates surrogate keys (including source)
 - Applies business logic and calculations
 - Incremental materialization with partitioning
 - Includes all source-specific enrichments
+- **web_analytics/**: Multi-source session and pageview facts
+- **ecommerce/**: Transaction and product analytics
+- **digital_experience/**: UX metrics and behavioral signals (ContentSquare)
 
 **Marts Layer (`marts/`):**
 - Final user-facing views
