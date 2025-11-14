@@ -1,6 +1,34 @@
 # GA4 E-commerce Analytics - dbt Package
 
-A comprehensive dbt package for transforming Google Analytics 4 e-commerce data into analytics-ready models with web analytics, e-commerce, and conversion rate analytics metrics.
+A comprehensive dbt package for transforming Google Analytics 4 and Snowplow e-commerce data into analytics-ready models with web analytics, e-commerce, and conversion rate analytics metrics.
+
+## 🎯 Multi-Source Support
+
+This package supports **unified analytics across multiple tracking sources**:
+
+- **GA4**: Google Analytics 4 e-commerce events
+- **Snowplow**: Snowplow event tracking with GA4 Ecommerce Adapter
+
+Both sources are seamlessly integrated through a three-tier architecture:
+1. **Staging Layer**: Source-specific transformations
+2. **Integration Layer**: Unified schemas with source identification
+3. **Warehouse Layer**: Analytics-ready fact tables and dimensions
+
+### Snowplow with GA4 Adapter
+
+When using Snowplow with the **GA4 Ecommerce Adapter**, events sent through Google Tag Manager are captured by both GA4 and Snowplow simultaneously. This package automatically:
+
+- ✅ Maps Snowplow event schemas to GA4-compatible structures
+- ✅ Unions data from both sources with a common `source` column
+- ✅ Preserves Snowplow-specific enrichments (browser details, enhanced geography, user properties)
+- ✅ Handles schema differences in ecommerce items arrays
+- ✅ Supports flexible source enabling/disabling via configuration
+
+**Key Benefits:**
+- **Data Redundancy**: Compare metrics across tracking systems
+- **Enhanced Data**: Access Snowplow's additional enrichments alongside GA4 data
+- **Flexible Analysis**: Analyze by source or combined metrics
+- **Migration Path**: Easy transition between tracking platforms
 
 ## 📊 Models
 
@@ -93,24 +121,93 @@ Daily conversion funnel metrics with drop-off analysis.
   - Drop-off counts and rates at each stage
   - Segmented by traffic source, device, and geography
 
+## ⚙️ Configuration
+
+### Enabling/Disabling Data Sources
+
+Control which tracking sources are included in your analytics via `dbt_project.yml`:
+
+```yaml
+vars:
+  enable_ga4_source: true      # Enable/disable GA4 data
+  enable_snowplow_source: true  # Enable/disable Snowplow data
+```
+
+**Configuration Options:**
+- **Both enabled** (recommended): Union data from both sources for complete coverage
+- **GA4 only**: `enable_ga4_source: true`, `enable_snowplow_source: false`
+- **Snowplow only**: `enable_ga4_source: false`, `enable_snowplow_source: true`
+
+When both sources are enabled, data is automatically unioned in the integration layer with a `source` column identifying the origin (ga4/snowplow).
+
 ## 📁 Project Structure
 
 ```
 ra_ga4_ecomm/
 ├── models/
+│   ├── staging/
+│   │   ├── ga4/
+│   │   │   ├── stg_ga4__event.sql          # GA4 staging model
+│   │   │   └── stg_ga4.yml                 # GA4 tests & documentation
+│   │   └── snowplow/
+│   │       ├── stg_snowplow__event.sql     # Snowplow staging model
+│   │       └── stg_snowplow.yml            # Snowplow tests & documentation
+│   ├── integration/
+│   │   ├── int__session.sql                # Unified session data
+│   │   ├── int__pageview.sql               # Unified pageview data
+│   │   ├── int__add_to_cart.sql            # Unified cart events
+│   │   ├── int__purchase.sql               # Unified purchase events
+│   │   ├── int__product_view.sql           # Unified product views
+│   │   └── integration.yml                 # Integration tests & documentation
+│   ├── warehouse/
+│   │   └── ga4/
+│   │       ├── session_fct.sql             # Session fact table
+│   │       ├── pageview_fct.sql            # Pageview fact table
+│   │       ├── add_to_cart_fct.sql         # Add to cart fact table
+│   │       ├── purchase_fct.sql            # Purchase fact table
+│   │       ├── product_view_fct.sql        # Product view fact table
+│   │       ├── user_dim.sql                # User dimension
+│   │       ├── conversion_funnel_fct.sql   # Conversion funnel
+│   │       └── ga4.yml                     # Warehouse tests & documentation
 │   ├── marts/
-│   │   ├── sessions.sql
-│   │   ├── pageviews.sql
-│   │   ├── users.sql
-│   │   ├── add_to_cart_events.sql
-│   │   ├── purchase_events.sql
-│   │   ├── product_views.sql
-│   │   ├── conversion_funnel.sql
-│   │   └── schema.yml
-│   └── sources.yml
+│   │   ├── sessions.sql                    # Session mart (view)
+│   │   ├── pageviews.sql                   # Pageview mart (view)
+│   │   ├── users.sql                       # User mart (view)
+│   │   ├── add_to_cart_events.sql          # Cart events mart (view)
+│   │   ├── purchase_events.sql             # Purchase mart (view)
+│   │   ├── product_views.sql               # Product views mart (view)
+│   │   ├── conversion_funnel.sql           # Funnel mart (view)
+│   │   └── schema.yml                      # Mart documentation
+│   └── sources.yml                         # Source definitions
 └── analyses/
-    └── data_quality_validation.sql
+    └── data_quality_validation.sql         # Data quality checks
 ```
+
+### Model Layer Architecture
+
+**Staging Layer (`staging/`):**
+- Source-specific transformations
+- Field renaming and type casting
+- Basic data cleaning
+- Conditionally enabled via variables
+
+**Integration Layer (`integration/`):**
+- Unions data from multiple sources
+- Adds `source` column for identification
+- Provides superset schema (all fields from all sources)
+- Maps source-specific fields to common schema
+- Handles items array schema normalization
+
+**Warehouse Layer (`warehouse/`):**
+- Generates surrogate keys (including source)
+- Applies business logic and calculations
+- Incremental materialization with partitioning
+- Includes all source-specific enrichments
+
+**Marts Layer (`marts/`):**
+- Final user-facing views
+- Simplified column names
+- Documentation and examples
 
 ## 🚀 Quick Start
 
@@ -143,22 +240,88 @@ All models include:
 - **Cross-model consistency checks**
 - **Logical validation** (no negative values where inappropriate)
 
-### Validation Results (Latest)
-- ✅ **1.35M** page views processed
-- ✅ **361K** sessions aggregated
+### Validation Results (Latest - Multi-Source)
+
+**Data Volume by Source:**
+
+| Metric | GA4 | Snowplow | Total |
+|--------|-----|----------|-------|
+| Sessions | 360,974 | 91 | 361,065 |
+| Page Views | 1,350,428 | 34 | 1,350,462 |
+| Add to Cart | 667,426 | 37 | 667,463 |
+| Purchases | 16,003 | 12 | 16,015 |
+| Product Views | 2,748,246 | 53 | 2,748,299 |
+
+**Quality Metrics:**
+- ✅ **361K** sessions aggregated from both sources
 - ✅ **270K** unique users identified
+- ✅ **1.35M** page views processed with navigation flow
 - ✅ **667K** add-to-cart events tracked
 - ✅ **2.75M** product views recorded
 - ✅ **16K** purchase items processed
 - ✅ **$362K** total revenue tracked
 - ✅ **4,419** users with purchases
 - ✅ **775** repeat buyers
-- ✅ **19/19** data quality tests passing
+- ✅ **86/86** data quality tests passing (100% pass rate)
 
 ### Known Data Characteristics
 - Some purchase events may have null `transaction_id` (59 out of 16K) - this is present in the source data
 - Funnel progressions may not be strictly hierarchical (users can skip steps in GA4 e-commerce tracking)
 - Small rounding differences (~$55 out of $362K) between revenue aggregations are expected
+
+## 🎁 Snowplow-Specific Enrichments
+
+When Snowplow data is enabled, the following additional fields are available in all warehouse fact tables:
+
+### Browser Enrichments
+- `browser_family` - Browser family (e.g., Chrome, Firefox, Safari)
+- `browser_name` - Specific browser name and version
+- `browser_version` - Browser version number
+- `browser_viewheight` - Viewport height in pixels
+- `browser_viewwidth` - Viewport width in pixels
+
+### Device Enrichments
+- `device_type` - Device type (desktop, mobile, tablet)
+- `device_is_mobile` - Boolean flag for mobile devices
+- `device_screen_height` - Screen height in pixels
+- `device_screen_width` - Screen width in pixels
+
+### Enhanced Geography
+- `geo_region_name` - Full region/state name (not just code)
+- `geo_zipcode` - Postal/ZIP code
+- `geo_latitude` - Latitude coordinates
+- `geo_longitude` - Longitude coordinates
+- `geo_timezone` - Local timezone
+
+### User Properties (Custom)
+- `user_customer_segment` - Customer segmentation data
+- `user_loyalty_tier` - Loyalty program tier
+- `user_subscription_status` - Subscription status
+
+### Additional Traffic Source Fields
+- `traffic_source_content` - Campaign content parameter
+- `traffic_source_term` - Campaign term/keyword parameter
+
+### Ecommerce Enhancements
+- `ecommerce_value` - Transaction value in original currency
+- `ecommerce_currency` - Transaction currency code
+- `discount` - Item-level discount amount (in items array)
+- `index` - Item position in list (in items array)
+
+**Usage Example:**
+```sql
+SELECT
+  source,
+  device_category,
+  browser_family,
+  device_is_mobile,
+  geo_zipcode,
+  COUNT(*) as sessions
+FROM `ra-warehouse-dev.analytics_ga4.session_fct`
+WHERE device_is_mobile IS NOT NULL  -- Snowplow sessions only
+GROUP BY 1, 2, 3, 4, 5
+ORDER BY sessions DESC;
+```
 
 ## 🏗️ Incremental Loading
 
@@ -205,6 +368,59 @@ dbt run --full-refresh
   - Inactive (90+ days)
 
 ## 🔍 Sample Queries
+
+### Comparing Metrics Across Sources
+
+Analyze discrepancies or validate tracking implementation:
+
+```sql
+SELECT
+  event_date,
+  source,
+  COUNT(DISTINCT user_fk) as unique_users,
+  COUNT(*) as total_sessions,
+  SUM(page_views_per_session) as total_pageviews,
+  SUM(purchase_events_per_session) as total_purchases,
+  SUM(purchase_revenue_per_session) as total_revenue,
+  SAFE_DIVIDE(SUM(purchase_revenue_per_session), COUNT(*)) as revenue_per_session
+FROM `ra-warehouse-dev.analytics_ga4.session_fct`
+WHERE event_date BETWEEN '2021-01-01' AND '2021-01-31'
+GROUP BY event_date, source
+ORDER BY event_date, source;
+```
+
+### Analyze Snowplow Enrichments
+
+Leverage Snowplow-specific data for deeper insights:
+
+```sql
+WITH snowplow_sessions AS (
+  SELECT
+    user_fk,
+    browser_family,
+    device_type,
+    geo_zipcode,
+    geo_timezone,
+    user_customer_segment,
+    user_loyalty_tier,
+    session_duration_seconds,
+    purchase_revenue_per_session
+  FROM `ra-warehouse-dev.analytics_ga4.session_fct`
+  WHERE source = 'snowplow'
+    AND event_date >= '2021-01-01'
+)
+SELECT
+  browser_family,
+  user_loyalty_tier,
+  COUNT(*) as sessions,
+  AVG(session_duration_seconds) as avg_duration,
+  SUM(purchase_revenue_per_session) as revenue,
+  COUNT(DISTINCT user_fk) as unique_users
+FROM snowplow_sessions
+WHERE user_loyalty_tier IS NOT NULL
+GROUP BY browser_family, user_loyalty_tier
+ORDER BY revenue DESC;
+```
 
 ### Top Converting Traffic Sources
 ```sql
@@ -269,18 +485,145 @@ LIMIT 20;
 
 ## 📝 Notes
 
+### Data Sources
+
+**GA4 Source:**
 - **Source Data**: BigQuery Public Data - GA4 Obfuscated Sample E-commerce
 - **Date Range**: November 2020 - January 2021
+- **Table**: `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+
+**Snowplow Source:**
+- **Source Data**: Snowplow events with GA4 Ecommerce Adapter
+- **Sample Events**: 100 sample events
+- **Table**: `ra-warehouse-dev.snowplow_ecommerce_sample.events`
+- **Adapter**: GA4 Ecommerce Adapter (sends same events as GA4 via GTM)
+
+### Technical Details
+
 - **Database**: ra-warehouse-dev
-- **Schema**: analytics_ga4_marts
+- **Schemas**:
+  - `analytics_ga4_staging` - Staging models
+  - `analytics_ga4_integration` - Integration models
+  - `analytics_ga4` - Warehouse models
+  - `analytics_ga4_marts` - Mart views
 - **dbt Version**: 1.11.0-b4
 - **Adapter**: dbt-bigquery 1.10.3
+
+### Testing Coverage
+
+- **Total Tests**: 86
+- **Staging Tests**: 7 (Snowplow) + existing GA4 tests
+- **Integration Tests**: 41 (covering all integration models)
+- **Warehouse Tests**: 38 (covering all fact tables and dimensions)
+- **Pass Rate**: 100%
+
+## 🔧 Technical Implementation: Snowplow Integration
+
+### How the Integration Works
+
+When Snowplow is configured with the **GA4 Ecommerce Adapter**, events from Google Tag Manager are sent to both GA4 and Snowplow simultaneously. This package handles the integration through:
+
+#### 1. **Schema Mapping** (`stg_snowplow__event`)
+- Extracts Snowplow events from the source table
+- Maps Snowplow field names to GA4 equivalents
+- Extracts `items` array from `ecommerce` struct
+- Casts session_id to string for consistency with GA4
+
+#### 2. **Items Array Normalization** (`int__*` models)
+Snowplow and GA4 have slightly different items array schemas. The integration layer uses explicit type casting to create a unified schema:
+
+```sql
+array(
+  select as struct
+    cast(item.item_id as string) as item_id,
+    cast(item.item_name as string) as item_name,
+    -- ... 26 total fields with explicit types
+    cast(item.discount as float64) as discount,  -- Snowplow-specific
+    cast(null as float64) as discount  -- NULL for GA4
+  from unnest(items) as item
+) as items
+```
+
+This ensures:
+- ✅ Successful UNION ALL operations
+- ✅ Consistent data types across sources
+- ✅ Preservation of source-specific fields
+- ✅ NULL handling for missing fields
+
+#### 3. **Conditional Source Loading**
+
+Integration models use Jinja templating for flexible source inclusion:
+
+```sql
+{% if var('enable_ga4_source', true) %}
+  -- GA4 CTE
+{% endif %}
+
+{% if var('enable_snowplow_source', false) %}
+  -- Snowplow CTE
+{% endif %}
+
+final as (
+  {% if var('enable_ga4_source', true) %}
+    select * from ga4_[entity]
+  {% endif %}
+
+  {% if var('enable_ga4_source', true) and var('enable_snowplow_source', false) %}
+    union all
+  {% endif %}
+
+  {% if var('enable_snowplow_source', false) %}
+    select * from snowplow_[entity]
+  {% endif %}
+)
+```
+
+#### 4. **Surrogate Key Generation**
+
+Warehouse models include `source` in surrogate keys to ensure uniqueness:
+
+```sql
+{{ dbt_utils.generate_surrogate_key([
+    'source',
+    'event_date',
+    'user_fk',
+    'ga_session_id'
+]) }} as session_pk
+```
+
+This prevents collisions if the same event exists in both sources.
+
+### Field Mapping Reference
+
+| Snowplow Field | GA4 Equivalent | Notes |
+|----------------|----------------|-------|
+| `session_id` | `ga_session_id` | Cast to string |
+| `ecommerce.value` | `purchase_revenue` | Transaction total |
+| `ecommerce.tax` | `tax_value_in_usd` | Tax amount |
+| `ecommerce.shipping` | `shipping_value_in_usd` | Shipping cost |
+| `ecommerce.currency` | `ecommerce_currency` | Snowplow-specific |
+| `items[].discount` | N/A | Snowplow-specific |
+| `items[].index` | `item_list_index` | List position |
+| `geo.latitude/longitude` | N/A | Snowplow-specific |
+| `user_properties.*` | N/A | Snowplow-specific |
+
+### Adding New Sources
+
+To add additional tracking sources:
+
+1. Create staging model in `models/staging/[source]/`
+2. Map source schema to common field names
+3. Update integration models to include new source CTE
+4. Add source variable to `dbt_project.yml`
+5. Update warehouse model surrogate keys
+6. Add tests in `[source].yml`
 
 ## 🤝 Contributing
 
 To add new models or modify existing ones:
-1. Update the SQL in `models/marts/`
-2. Add documentation in `models/marts/schema.yml`
-3. Add tests as appropriate
+1. Update the SQL in appropriate layer (`staging/`, `integration/`, `warehouse/`, `marts/`)
+2. Add documentation in layer-specific `.yml` files
+3. Add tests following existing patterns
 4. Run `dbt run` and `dbt test` to verify
 5. Update this README with any new metrics or models
+6. For new sources, follow the "Adding New Sources" guide above
