@@ -29,21 +29,20 @@ renamed as (
         cast(user_id as string) as user_pseudo_id,
         cast(session_id as string) as ga_session_id,
         cast(event_id as string) as event_id,
-        cast(pageview_id as string) as pageview_id,
 
         -- event attributes (ContentSquare doesn't have event names, using 'page_view')
         'page_view' as event_name,
 
         -- page details
         path as page_path,
-        query as page_query,
-        hash as page_hash,
+        `query` as page_query,
+        `hash` as page_hash,
         title as page_title,
 
         -- pageview metrics (ContentSquare-specific)
         cast(view_number as int64) as view_number,
-        cast(is_first as bool) as is_first_view,
-        cast(is_last as bool) as is_last_view,
+        case when is_first = '1' then true else false end as is_first_view,
+        case when is_last = '1' then true else false end as is_last_view,
         safe_cast(scroll_rate as float64) as scroll_rate,
         safe_cast(view_duration_msec as int64) as view_duration_msec,
 

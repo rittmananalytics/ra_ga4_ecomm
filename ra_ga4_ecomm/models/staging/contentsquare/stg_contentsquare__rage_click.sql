@@ -38,8 +38,8 @@ renamed as (
         -- page details
         domain,
         path as page_path,
-        query as page_query,
-        hash as page_hash,
+        `query` as page_query,
+        `hash` as page_hash,
         landing_page,
 
         -- rage click details

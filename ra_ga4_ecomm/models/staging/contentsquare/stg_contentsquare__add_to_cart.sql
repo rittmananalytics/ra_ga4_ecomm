@@ -36,8 +36,8 @@ renamed as (
 
         -- page details
         path as page_path,
-        query as page_query,
-        hash as page_hash,
+        `query` as page_query,
+        `hash` as page_hash,
         title as page_title,
         domain,
         href,
